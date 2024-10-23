@@ -1,6 +1,5 @@
-﻿using tasktracker_3.Models;
-using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using tasktracker_3.Models;
 
 namespace tasktracker_3.Interfaces.Services
 {

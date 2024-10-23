@@ -1,6 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using tasktracker_3.Models;
 using tasktracker_3.Models.Enums;
 
 namespace tasktracker_3.DTO

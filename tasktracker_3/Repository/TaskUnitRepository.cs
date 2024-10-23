@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using System.Threading.Tasks;
 using tasktracker_3.Data;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Models;

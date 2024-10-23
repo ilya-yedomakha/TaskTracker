@@ -1,13 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Interfaces.Services;
 using tasktracker_3.Models;
-using tasktracker_3.Repository;
-using tasktracker_3.DTO;
-using Microsoft.IdentityModel.Tokens;
-using System.Threading.Tasks;
 
 namespace tasktracker_3.Services
 {

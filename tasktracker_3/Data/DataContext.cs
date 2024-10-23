@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
-using tasktracker_3.DTO;
 using tasktracker_3.Models;
 using TaskUnit = tasktracker_3.Models.TaskUnit;
 

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
-using tasktracker_3.Models;
+﻿using System.Text.Json.Serialization;
 using tasktracker_3.Models.Enums;
 
 namespace tasktracker_3.DTO

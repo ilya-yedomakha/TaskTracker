@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using tasktracker_3.Models;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace tasktracker_3.DTO
 {

@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using tasktracker_3.DTO;
 using tasktracker_3.Interfaces.Services;
 using tasktracker_3.Models;
-using tasktracker_3.Services;
 
 namespace tasktracker_3.Controllers
 {

@@ -1,9 +1,9 @@
-using tasktracker_3.Interfaces.Services;
+using Microsoft.EntityFrameworkCore;
+using tasktracker_3.Data;
 using tasktracker_3.Interfaces;
+using tasktracker_3.Interfaces.Services;
 using tasktracker_3.Repository;
 using tasktracker_3.Services;
-using tasktracker_3.Data;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
