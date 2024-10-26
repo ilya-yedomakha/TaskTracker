@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using tasktracker_3.DTO;
 using tasktracker_3.Interfaces.Services;
 using tasktracker_3.Models;
+using tasktracker_3.Services.Base;
 
 namespace tasktracker_3.Controllers
 {
@@ -13,10 +14,12 @@ namespace tasktracker_3.Controllers
         private readonly IProjectService _projectService;
         private readonly IWorkerService _workerService;
         private readonly ITaskUnitService _taskUnitService;
+        private readonly BaseService<Project> _projectServiceBase;
         private readonly IMapper _mapper;
 
-        public ProjectsController(IWorkerService workerService, ITaskUnitService taskService, IProjectService projectService, IMapper mapper)
+        public ProjectsController(BaseService<Project> projectServiceBase, IWorkerService workerService, ITaskUnitService taskService, IProjectService projectService, IMapper mapper)
         {
+            _projectServiceBase = projectServiceBase;
             _projectService = projectService;
             _workerService = workerService;
             _taskUnitService = taskService;
@@ -26,83 +29,63 @@ namespace tasktracker_3.Controllers
         // GET: api/Projects
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<Project>), 200)]
-        public IActionResult GetProjects()
+        public IActionResult GetAllProjects()
         {
-            var projects = _mapper.Map<List<ProjectDTO>>(_projectService.GetProjects());
-
-            if (!ModelState.IsValid)
+            var result = _projectServiceBase.GetAll(false);
+            if (result.IsSuccess)
             {
-                return BadRequest(ModelState);
+                return Ok(_mapper.Map<List<ProjectDTO>>(result.Models));
             }
-            return Ok(projects);
+            else return BadRequest(result.Error);
         }
 
         // GET: api/Projects/5
         [HttpGet("{id:long}")]
         [ProducesResponseType(typeof(Project), 200)]
-        public IActionResult GetProject(long id)
+        public IActionResult GetProjectById(long id)
         {
-            var project = _projectService.GetProject(id);
-
-            if (project == null)
+            var result = _projectServiceBase.GetById(id,false);
+            if (result.IsSuccess)
             {
-                return NotFound();
+                return Ok(_mapper.Map<ProjectDTO>(result.Model));
             }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            return Ok(_mapper.Map<ProjectDTO>(project));
+            else return BadRequest(result.Error);
         }
 
         [HttpGet("{name}")]
         [ProducesResponseType(typeof(IEnumerable<Project>), 200)]
-        public IActionResult GetTasks(string name)
+        public IActionResult GetProjectsByName(string name)
         {
-            var projects = _projectService.GetProjects(name);
-
-            if (!ModelState.IsValid)
+            var result = _projectService.GetProjects(name);
+            if (result.IsSuccess)
             {
-                return BadRequest(ModelState);
+                return Ok(_mapper.Map<List<ProjectDTO>>(result.Models));
             }
-            return Ok(_mapper.Map<List<ProjectDTO>>(projects));
+            else return BadRequest(result.Error);
         }
 
         [HttpGet("{id:long}/Workers")]
         [ProducesResponseType(typeof(IEnumerable<Worker>), 200)]
         public IActionResult GetTaskWorkers(long id)
         {
-            if (!ModelState.IsValid)
+            var result = _projectService.GetProjectWorkers(id);
+            if (result.IsSuccess)
             {
-                return BadRequest(ModelState);
+                return Ok(_mapper.Map<List<WorkerDTO>>(result.Models));
             }
-
-            var projectworkers = _projectService.GetProjectWorkers(id);
-            if (projectworkers == null)
-            {
-                return NotFound("There is no such project");
-            }
-
-            return Ok(_mapper.Map<List<WorkerDTO>>(projectworkers));
+            else return BadRequest(result.Error);
         }
 
         [HttpGet("{id:long}/Tasks")]
         [ProducesResponseType(typeof(IEnumerable<TaskUnit>), 200)]
         public IActionResult GetProjectTasks(long id)
         {
-            if (!ModelState.IsValid)
+            var result = _projectService.GetProjectTasks(id);
+            if (result.IsSuccess)
             {
-                return BadRequest(ModelState);
+                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
             }
-
-            var projectTasks = _projectService.GetProjectTasks(id);
-            if (projectTasks == null)
-            {
-                return NotFound("There is no such project");
-            }
-
-            return Ok(_mapper.Map<List<TaskUnitDTO>>(projectTasks));
+            else return BadRequest(result.Error);
         }
 
         [HttpPost]
@@ -110,20 +93,15 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(400)]
         public IActionResult AddProject([FromBody] CreateProjectDTO projectCreate)
         {
-            if (projectCreate == null)
-            {
-                return BadRequest(ModelState);
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var project = _mapper.Map<Project>(projectCreate);
 
             var result = _projectService.AddProject(project);
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
 
         [HttpPut("{Id}")]
@@ -132,18 +110,16 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateProject(int Id, [FromBody] CreateProjectDTO ProjectUpdate)
         {
-            if (ProjectUpdate == null)
-                return BadRequest(ModelState);
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
             var project = _mapper.Map<Project>(ProjectUpdate);
 
             var result = _projectService.UpdateProject(Id, project);
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
 
         [HttpPut("{projectId}/Workers/{workerId}")]
@@ -152,13 +128,13 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult AddWorkerToProject(long projectId, long workerId)
         {
-            if (!ModelState.IsValid)
+            var result = _projectService.AddWorkerToProject(projectId, workerId);
+            if (result.IsFailure)
             {
-                return BadRequest(ModelState);
+                return BadRequest(result.Error);
             }
 
-            var result = _projectService.AddWorkerToProject(projectId, workerId);
-            return result;
+            return NoContent();
         }
 
         [HttpPut("{projectId}/Tasks/{taskId}")]
@@ -167,13 +143,13 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult AddTaskToProject(long projectId, long taskId)
         {
-            if (!ModelState.IsValid)
+            var result = _projectService.AddTaskToProject(projectId, taskId);
+            if (result.IsFailure)
             {
-                return BadRequest(ModelState);
+                return BadRequest(result.Error);
             }
 
-            var result = _projectService.AddTaskToProject(projectId, taskId);
-            return result;
+            return NoContent();
         }
 
         [HttpDelete("{projectId}/Workers/{workerId}")]
@@ -182,13 +158,13 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult RemoveWorkerFromProject(long projectId, long workerId)
         {
-            if (!ModelState.IsValid)
+            var result = _projectService.RemoveWorkerFromProject(projectId, workerId);
+            if (result.IsFailure)
             {
-                return BadRequest(ModelState);
+                return BadRequest(result.Error);
             }
 
-            var result = _projectService.RemoveWorkerFromProject(projectId, workerId);
-            return result;
+            return NoContent();
         }
 
         [HttpDelete("{projectId}/Tasks/{taskId}")]
@@ -197,13 +173,13 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult RemoveTaskFromProject(long projectId, long taskId)
         {
-            if (!ModelState.IsValid)
+            var result = _projectService.RemoveTaskFromProject(projectId, taskId);
+            if (result.IsFailure)
             {
-                return BadRequest(ModelState);
+                return BadRequest(result.Error);
             }
 
-            var result = _projectService.RemoveTaskFromProject(projectId, taskId);
-            return result;
+            return NoContent();
         }
 
         [HttpDelete("{Id}")]
@@ -212,12 +188,13 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteProject(int Id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             var result = _projectService.DeleteProject(Id);
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
     }
 }

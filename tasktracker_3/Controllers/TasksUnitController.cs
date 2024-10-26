@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using tasktracker_3.DTO;
 using tasktracker_3.Interfaces.Services;
 using tasktracker_3.Models;
+using tasktracker_3.Services.Base;
 
 namespace tasktracker_3.Controllers
 {
@@ -14,11 +15,13 @@ namespace tasktracker_3.Controllers
         private readonly ITaskUnitService _taskUnitService;
         private readonly IWorkerService _workerService;
         private readonly IProjectService _projectService;
+        private readonly BaseService<TaskUnit> _taskUnitServiceBase;
         private readonly IMapper _mapper;
 
-        public TasksUnitController(IProjectService projectService, IWorkerService workerService, ITaskUnitService
+        public TasksUnitController(BaseService<TaskUnit> taskUnitServiceBase, IProjectService projectService, IWorkerService workerService, ITaskUnitService
             taskUnitService, IMapper mapper)
         {
+            _taskUnitServiceBase = taskUnitServiceBase;
             _workerService = workerService;
             _taskUnitService = taskUnitService;
             _projectService = projectService;
@@ -28,35 +31,27 @@ namespace tasktracker_3.Controllers
         // GET: api/Tasks
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<TaskUnit>), 200)]
-        public IActionResult GetTasks()
+        public IActionResult GetAllTasks()
         {
-            var taskUnits = _taskUnitService.GetTasks();
-
-            if (!ModelState.IsValid)
+            var result = _taskUnitServiceBase.GetAll(false);
+            if (result.IsSuccess)
             {
-                return BadRequest(ModelState);
+                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
             }
-            return Ok(_mapper.Map<List<TaskUnitDTO>>(taskUnits));
+            else return BadRequest(result.Error);
         }
 
         // GET: api/Tasks/5
         [HttpGet("{id:long}")]
         [ProducesResponseType(typeof(TaskUnit), 200)]
-        public IActionResult GetTask(long id)
+        public IActionResult GetTaskById(long id)
         {
-            var taskUnit = _taskUnitService.GetTask(id);
-
-            if (taskUnit == null)
+            var result = _taskUnitServiceBase.GetById(id, false);
+            if (result.IsSuccess)
             {
-                return NotFound();
+                return Ok(_mapper.Map<TaskUnitDTO>(result.Model));
             }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-
-            return Ok(_mapper.Map<TaskUnitDTO>(taskUnit));
+            else return BadRequest(result.Error);
         }
 
         // GET: api/Tasks/5
@@ -64,18 +59,12 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(typeof(IEnumerable<Worker>), 200)]
         public IActionResult GetTaskWorkers(long id)
         {
-            var taskUnit = _taskUnitService.TaskExists(id);
-
-            if (!taskUnit)
+            var result = _taskUnitService.GetTaskWorkers(id);
+            if (result.IsSuccess)
             {
-                return NotFound();
+                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
             }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            return Ok(_mapper.Map<List<WorkerDTO>>(_taskUnitService.GetTaskWorkers(id)));
+            else return BadRequest(result.Error);
         }
 
         // GET: api/Tasks/5
@@ -83,18 +72,12 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(typeof(IEnumerable<Worker>), 200)]
         public IActionResult GetParentsTasks(long id)
         {
-            var taskUnit = _taskUnitService.TaskExists(id);
-
-            if (!taskUnit)
+            var result = _taskUnitService.GetParentsOfTask(id);
+            if (result.IsSuccess)
             {
-                return NotFound();
+                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
             }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            return Ok(_mapper.Map<List<TaskUnitDTO>>(_taskUnitService.GetParentsOfTask(id)));
+            else return BadRequest(result.Error);
         }
 
         // GET: api/Tasks/5
@@ -102,49 +85,34 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(typeof(IEnumerable<Worker>), 200)]
         public IActionResult GetChildrenTasks(long id)
         {
-            var taskUnit = _taskUnitService.TaskExists(id);
-
-            if (!taskUnit)
+            var result = _taskUnitService.GetChildrenOfTask(id);
+            if (result.IsSuccess)
             {
-                return NotFound();
+                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
             }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            return Ok(_mapper.Map<List<TaskUnitDTO>>(_taskUnitService.GetChildrenOfTask(id)));
+            else return BadRequest(result.Error);
         }
 
         [HttpGet("{id:long}/Project")]
         [ProducesResponseType(typeof(Project), 200)]
         public IActionResult GetTaskProject(long id)
         {
-            var taskUnit = _taskUnitService.TaskExists(id);
+            var result = _taskUnitService.GetTaskProject(id);
 
-            if (!taskUnit)
+            if (result.IsSuccess)
             {
-                return NotFound();
+                return Ok(_mapper.Map<ProjectDTO>(result.Model));
             }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            return Ok(_mapper.Map<ProjectDTO>(_taskUnitService.GetTaskProject(id)));
+            else return BadRequest(result.Error);
         }
 
         [HttpGet("title/{title}")]
         [ProducesResponseType(typeof(IEnumerable<TaskUnit>), 200)]
-        public IActionResult GetTasks(string title)
+        public IActionResult GetAllTasks(string title)
         {
-            var taskUnits = _taskUnitService.GetTasks(title);
+            var result = _taskUnitService.GetTasks(title);
 
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            return Ok(_mapper.Map<List<TaskUnitDTO>>(taskUnits));
+            return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
         }
 
 
@@ -153,22 +121,15 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(400)]
         public IActionResult AddTask([FromBody] CreateTaskUnitDTO taskUnitCreate)
         {
-            if (taskUnitCreate == null)
-            {
-                return BadRequest(ModelState);
-            }
-
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var taskUnit = _mapper.Map<TaskUnit>(taskUnitCreate);
 
             var result = _taskUnitService.AddTask(taskUnit);
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
 
-            return result;
+            return NoContent();
         }
 
         [HttpPut("{Id}")]
@@ -177,19 +138,16 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateTask(long Id, [FromBody] CreateTaskUnitDTO taskUnitUpdate)
         {
-            if (taskUnitUpdate == null)
-                return BadRequest(ModelState);
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var taskUnit = _mapper.Map<TaskUnit>(taskUnitUpdate);
 
             var result = _taskUnitService.UpdateTask(Id, taskUnit);
 
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
 
         [HttpPut("{taskId}/Workers/{workerId}")]
@@ -198,13 +156,14 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult AddWorkerToTask(long taskId, long workerId)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             var result = _taskUnitService.AddWorkerToTask(taskId, workerId);
 
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
 
         [HttpPut("{taskId}/Tasks/{childTaskId}")]
@@ -213,13 +172,14 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult AddChildTaskToTask(long taskId, long childTaskId)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            var result = _taskUnitService.AddChildTaskToTask(taskId,childTaskId);
+            var result = _taskUnitService.AddChildTaskToTask(taskId, childTaskId);
 
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
 
 
@@ -229,14 +189,14 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult RemoveChildTaskFromTask(long taskId, long childTaskId)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var result = _taskUnitService.RemoveChildTaskFromTask(taskId, childTaskId);
 
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
 
         [HttpDelete("{taskId}/Workers/{workerId}")]
@@ -245,14 +205,14 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult RemoveWorkerFromTask(long taskId, long workerId)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var result = _taskUnitService.RemoveWorkerFromTask(taskId, workerId);
 
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
 
         [HttpDelete("{Id}")]
@@ -261,13 +221,14 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult DeleteTask(int Id)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
             var result = _taskUnitService.DeleteTask(Id);
 
-            return result;
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Error);
+            }
+
+            return NoContent();
         }
     }
 }

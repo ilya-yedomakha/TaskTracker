@@ -1,28 +1,22 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using tasktracker_3.Help.Result;
 using tasktracker_3.Models;
 
 namespace tasktracker_3.Interfaces.Services
 {
     public interface ITaskUnitService
     {
-        ICollection<TaskUnit> GetTasks();
-        TaskUnit? GetTask(long id);
-        ICollection<TaskUnit> GetTasks(string Title);
-        bool TaskExists(long id);
-        IActionResult AddTask(TaskUnit taskUnit);
-        IActionResult UpdateTask(long id, TaskUnit taskUnit);
-        IActionResult AddWorkerToTask(long taskId, long workerId);
-        IActionResult AddChildTaskToTask(long parentTaskId, long childTaskId);
-        IActionResult RemoveChildTaskFromTask(long parentTaskId, long childTaskId);
+        Result<TaskUnit> GetTasks(string Title);
+        Result<TaskUnit> AddTask(TaskUnit taskUnit);
+        Result<TaskUnit> UpdateTask(long id, TaskUnit taskUnit);
+        Result<TaskUnit> AddWorkerToTask(long taskId, long workerId);
+        Result<TaskUnit> AddChildTaskToTask(long parentTaskId, long childTaskId);
+        Result<TaskUnit> RemoveChildTaskFromTask(long parentTaskId, long childTaskId);
 
-        //IActionResult AddParentTaskToTask(long TaskId, long parentTaskId);
-        //IActionResult RemoveParentTaskFromTask(long TaskId, long parentTaskId);
-
-        ICollection<TaskUnit>? GetChildrenOfTask(long id);
-        ICollection<TaskUnit>? GetParentsOfTask(long id);
-        IActionResult RemoveWorkerFromTask(long taskId, long workerId);
-        IActionResult DeleteTask(long id);
-        ICollection<Worker>? GetTaskWorkers(long id);
-        Project? GetTaskProject(long id);
+        Result<TaskUnit> GetChildrenOfTask(long id);
+        Result<TaskUnit> GetParentsOfTask(long id);
+        Result<TaskUnit> RemoveWorkerFromTask(long taskId, long workerId);
+        Result<TaskUnit> DeleteTask(long id);
+        Result<Worker> GetTaskWorkers(long id);
+        Result<Project> GetTaskProject(long id);
     }
 }

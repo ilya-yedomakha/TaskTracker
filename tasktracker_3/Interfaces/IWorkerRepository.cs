@@ -1,6 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using tasktracker_3.Models;
+﻿using tasktracker_3.Models;
 
 namespace tasktracker_3.Interfaces
 {
@@ -14,7 +12,5 @@ namespace tasktracker_3.Interfaces
         bool DeleteWorker(Worker worker);
         ICollection<TaskUnit>? GetWorkerTasks(long id);
         ICollection<Project>? GetWorkerProjects(long id);
-
-        public bool Save();
     }
 }

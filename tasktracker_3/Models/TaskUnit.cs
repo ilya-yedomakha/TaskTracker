@@ -5,9 +5,9 @@ using tasktracker_3.Models.Enums;
 namespace tasktracker_3.Models
 {
     [Table("tasks")]
-    public class TaskUnit
+    public class TaskUnit : BaseModel
     {
-        public long Id { get; set; }
+        //public long Id { get; set; }
 
         [Required]
         [MaxLength(50, ErrorMessage = "Title cannot exceed 50 characters.")]

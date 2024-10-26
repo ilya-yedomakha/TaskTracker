@@ -1,23 +1,20 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using tasktracker_3.Help.Result;
 using tasktracker_3.Models;
 
 namespace tasktracker_3.Interfaces.Services
 {
     public interface IProjectService
     {
-        ICollection<Project> GetProjects();
-        Project? GetProject(long id);
-        ICollection<Project> GetProjects(string Name);
-        bool ProjectExists(long id);
-        IActionResult AddProject(Project Project);
-        IActionResult UpdateProject(long id, Project Project);
-        IActionResult AddWorkerToProject(long projectId, long workerId);
-        IActionResult RemoveWorkerFromProject(long projectId, long workerId);
+        Result<Project> GetProjects(string Name);
+        Result<Project> AddProject(Project Project);
+        Result<Project> UpdateProject(long id, Project Project);
+        Result<Project> AddWorkerToProject(long projectId, long workerId);
+        Result<Project> RemoveWorkerFromProject(long projectId, long workerId);
 
-        IActionResult AddTaskToProject(long projectId, long taskId);
-        IActionResult RemoveTaskFromProject(long projectId, long taskId);
-        IActionResult DeleteProject(long id);
-        ICollection<Worker>? GetProjectWorkers(long id);
-        ICollection<TaskUnit>? GetProjectTasks(long id);
+        Result<Project> AddTaskToProject(long projectId, long taskId);
+        Result<Project> RemoveTaskFromProject(long projectId, long taskId);
+        Result<Project> DeleteProject(long id);
+        Result<Worker> GetProjectWorkers(long id);
+        Result<TaskUnit> GetProjectTasks(long id);
     }
 }

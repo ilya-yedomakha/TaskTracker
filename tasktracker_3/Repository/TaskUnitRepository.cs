@@ -2,32 +2,14 @@
 using tasktracker_3.Data;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Models;
+using tasktracker_3.Repository.Base;
 
 
 namespace tasktracker_3.Repository
 {
-    public class TaskUnitRepository : ITaskUnitRepository
+    public class TaskUnitRepository : BaseRepository<TaskUnit>, ITaskUnitRepository
     {
-        private readonly DataContext _context;
-        public TaskUnitRepository(DataContext context) {
-            _context = context;
-        }
-
-        public bool AddTask(TaskUnit taskUnit)
-        {
-            _context.Add(taskUnit);
-            return Save();
-        }
-
-        public bool DeleteTask(TaskUnit taskUnit)
-        {
-            _context.Remove(taskUnit);
-            return Save();
-        }
-
-        public TaskUnit? GetTask(long id)
-        {
-            return _context.TaskUnits.Include(t => t.ChildOf).Include(t => t.ParentOf).Include(t => t.Workers).Include(t => t.Project).Where(t => t.Id == id).FirstOrDefault();
+        public TaskUnitRepository(DataContext context) : base(context) {
         }
 
         public Project? GetTaskProject(long id)
@@ -46,11 +28,6 @@ namespace tasktracker_3.Repository
             return _context.TaskUnits.Include(t => t.ChildOf).Include(t => t.ParentOf).Include(t => t.Workers).Include(t => t.Project).OrderBy(t => t.Id).ToList();
         }
 
-        public ICollection<TaskUnit> GetTasks()
-        {
-            return _context.TaskUnits.Include(t => t.ChildOf).Include(t => t.ParentOf).Include(t => t.Workers).Include(t => t.Project).OrderBy(t => t.Id).ToList();
-        }
-
         public ICollection<Worker>? GetTaskWorkers(long id)
         {
             var t = _context.TaskUnits.Include(t => t.Workers).Where(t => t.Id == id).FirstOrDefault();
@@ -60,23 +37,6 @@ namespace tasktracker_3.Repository
                 return null;
             }
             return t.Workers;
-        }
-
-        public bool TaskExists(long id)
-        {
-            return _context.TaskUnits.Any(e => e.Id == id);
-        }
-
-        public bool UpdateTask(TaskUnit taskUnit)
-        {
-            _context.Update(taskUnit);
-            return Save();
-        }
-
-        public bool Save()
-        {
-            var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
         }
 
         public ICollection<TaskUnit>? GetChildrenOfTask(long id)

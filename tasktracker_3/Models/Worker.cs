@@ -5,9 +5,10 @@ using tasktracker_3.Models.Enums;
 namespace tasktracker_3.Models
 {
     [Table("workers")]
-    public class Worker
+    public class Worker : BaseModel
     {
-        public long Id { get; set; }
+        //public long Id { get; set; }
+
         [Required]
         [StringLength(20, MinimumLength = 1, ErrorMessage = "Name must be between 1 and 20 characters.")]
         public string Name { get; set; } = "";

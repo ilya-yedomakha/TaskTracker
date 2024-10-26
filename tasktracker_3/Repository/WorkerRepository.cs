@@ -2,26 +2,26 @@
 using tasktracker_3.Data;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Models;
+using tasktracker_3.Repository.Base;
 
 namespace tasktracker_3.Repository
 {
-    public class WorkerRepository : IWorkerRepository
+    public class WorkerRepository : BaseRepository<Worker>, IWorkerRepository
     {
-        private readonly DataContext _context;
-        public WorkerRepository(DataContext context) {
-            _context = context;
+        public WorkerRepository(DataContext context) : base(context)
+        {
         }
 
         public bool AddWorker(Worker worker)
         {
             _context.Workers.Add(worker);
-            return Save();
+            return Save(_context);
         }
 
         public bool DeleteWorker(Worker worker)
         {
             _context.Remove(worker);
-            return Save();
+            return Save(_context);
         }
 
         public Worker? GetWorker(long id)
@@ -61,18 +61,12 @@ namespace tasktracker_3.Repository
         public bool UpdateWorker(Worker worker)
         {
             _context.Update(worker);
-            return Save();
+            return Save(_context);
         }
 
         public bool WorkerExists(long id)
         {
             return _context.Workers.Any(e => e.Id == id);
-        }
-
-        public bool Save()
-        {
-            var saved = _context.SaveChanges();
-            return saved > 0 ? true : false;
         }
     }
 }

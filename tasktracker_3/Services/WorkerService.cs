@@ -1,80 +1,79 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
+using tasktracker_3.Help.Result;
+using tasktracker_3.Help.Result.ModelErrors;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Interfaces.Services;
 using tasktracker_3.Models;
+using tasktracker_3.Repository.Base;
+using tasktracker_3.Services.Base;
 
 namespace tasktracker_3.Services
 {
-    public class WorkerService : IWorkerService
+    public class WorkerService : BaseService<Worker>, IWorkerService
     {
-        private readonly ITaskUnitRepository _taskUnitRepository;
-        private readonly IProjectRepository _projectRepository;
-        private readonly IWorkerRepository _workerRepository;
+        public WorkerService(BaseRepository<Worker> baseRepository,
+            BaseRepository<TaskUnit> taskRepositoryBase,
+            BaseRepository<Project> projectRepositoryBase,
+            BaseRepository<Worker> workerRepositoryBase,
+            ITaskUnitRepository taskUnitRepository, IProjectRepository projectRepository, IWorkerRepository workerRepository)
+        : base(baseRepository, taskRepositoryBase, projectRepositoryBase, workerRepositoryBase, taskUnitRepository, workerRepository, projectRepository) { }
 
-        public WorkerService(ITaskUnitRepository taskUnitRepository, IProjectRepository projectRepository, IWorkerRepository workerRepository)
+
+        public Result<Worker> AddProjectToWorker(long workerId, long projectId)
         {
-            _projectRepository = projectRepository;
-            _workerRepository = workerRepository;
-            _taskUnitRepository = taskUnitRepository;
-
-        }
-
-        public IActionResult AddProjectToWorker(long workerId, long projectId)
-        {
-            var project_db = _projectRepository.GetProject(projectId);
-            var worker_db = _workerRepository.GetWorker(workerId);
+            var project_db = _projectRepositoryBase.GetById(projectId, true);
+            var worker_db = _workerRepositoryBase.GetById(workerId, true);
 
 
             if (worker_db == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<Worker>.Failure(ModelError<Worker>.NotFound(workerId));
             }
             if (project_db == null)
             {
-                return new NotFoundObjectResult("Project was not found");
+                return Result<Worker>.Failure(ModelError<Project>.NotFound(projectId));
             }
 
             worker_db.Projects.Add(project_db);
 
-            if (_workerRepository.UpdateWorker(worker_db))
+            if (_workerRepositoryBase.Update(worker_db))
             {
-                return new OkObjectResult("Success! Project was added to worker!");
+                return Result<Worker>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<Worker>.Failure(ModelError<Worker>.ServerError);
         }
 
-        public IActionResult AddTaskToWorker(long workerId, long taskId)
+        public Result<Worker> AddTaskToWorker(long workerId, long taskId)
         {
-            var task_db = _taskUnitRepository.GetTask(taskId);
-            var worker_db = _workerRepository.GetWorker(workerId);
+            var task_db = _taskRepositoryBase.GetById(taskId, true);
+            var worker_db = _workerRepositoryBase.GetById(workerId, true);
 
             if (task_db == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<Worker>.Failure(ModelError<TaskUnit>.NotFound(workerId));
             }
             if (worker_db == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<Worker>.Failure(ModelError<Worker>.NotFound(workerId));
             }
 
             worker_db.Tasks.Add(task_db);
 
 
-            if (_workerRepository.UpdateWorker(worker_db))
+            if (_workerRepositoryBase.Update(worker_db))
             {
-                return new OkObjectResult("Success! Task was added to worker!");
+                return Result<Worker>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<Worker>.Failure(ModelError<Worker>.ServerError);
         }
 
-        public IActionResult AddWorker(Worker Worker)
+        public Result<Worker> AddWorker(Worker Worker)
         {
             if (Worker == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<Worker>.Failure(ModelError<Worker>.NullReference);
             }
             else
             {
@@ -84,10 +83,10 @@ namespace tasktracker_3.Services
                     ICollection<Project> projects = new List<Project>();
                     foreach (var project in prj)
                     {
-                        var db_project = _projectRepository.GetProject(project.Id);
+                        var db_project = _projectRepositoryBase.GetById(project.Id, true);
                         if (db_project == null)
                         {
-                            return new NotFoundObjectResult("Project with Id: " + project.Id + " was not found");
+                            return Result<Worker>.Failure(ModelError<Project>.NotFound(project.Id));
 
                         }
                         else
@@ -104,10 +103,10 @@ namespace tasktracker_3.Services
                     ICollection<TaskUnit> taskUnits_new = new List<TaskUnit>();
                     foreach (var taskUnit in tsks_create)
                     {
-                        var db_task = _taskUnitRepository.GetTask(taskUnit.Id);
+                        var db_task = _taskRepositoryBase.GetById(taskUnit.Id, true);
                         if (db_task == null)
                         {
-                            new NotFoundObjectResult("Task with Id: " + taskUnit.Id + " was not found");
+                            return Result<Worker>.Failure(ModelError<TaskUnit>.NotFound(taskUnit.Id));
                         }
                         else
                         {
@@ -117,21 +116,21 @@ namespace tasktracker_3.Services
                     Worker.Tasks = taskUnits_new;
                 }
 
-                if (_workerRepository.AddWorker(Worker))
+                if (_workerRepositoryBase.AddModel(Worker))
                 {
-                    return new OkObjectResult("Success! Worker added!");
+                    return Result<Worker>.Success();
                 }
 
-                return new BadRequestObjectResult("Something went wrong!");
+                return Result<Worker>.Failure(ModelError<Worker>.ServerError);
             }
         }
 
-        public IActionResult DeleteWorker(long id)
+        public Result<Worker> DeleteWorker(long id)
         {
-            var Worker = _workerRepository.GetWorker(id);
+            var Worker = _workerRepositoryBase.GetById(id, true);
             if (Worker == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<Worker>.Failure(ModelError<Worker>.NullReference);
             }
 
             var workerProjects = Worker.Projects;
@@ -148,100 +147,100 @@ namespace tasktracker_3.Services
                 task.Workers.Remove(Worker);
             }
 
-            if (_workerRepository.DeleteWorker(Worker))
+            if (_workerRepositoryBase.DeleteModel(Worker))
             {
-                return new OkObjectResult("Success! Worker was deleted!");
+                return Result<Worker>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<Worker>.Failure(ModelError<Worker>.ServerError);
         }
 
-        public Worker? GetWorker(long id)
+        public Result<Project> GetWorkerProjects(long id)
         {
-            return _workerRepository.GetWorker(id);
-        }
-
-        public ICollection<Project>? GetWorkerProjects(long id)
-        {
-            if (_workerRepository.WorkerExists(id))
+            var projects = _workerRepository.GetWorkerProjects(id);
+            if (projects != null)
             {
-                return _workerRepository.GetWorkerProjects(id);
+                var res = Result<Project>.Success();
+                res.Models = projects.ToList();
+                return res;
             }
-            return null;
+            else return Result<Project>.Failure(ModelError<Worker>.NotFound(id));
         }
 
-        public ICollection<Worker> GetWorkers()
+        public Result<TaskUnit> GetWorkerTasks(long id)
         {
-            return _workerRepository.GetWorkers();
-        }
-
-        public ICollection<TaskUnit>? GetWorkerTasks(long id)
-        {
-            if (_workerRepository.WorkerExists(id))
+            var tasks = _workerRepository.GetWorkerTasks(id);
+            if (tasks != null)
             {
-                return _workerRepository.GetWorkerTasks(id);
+                var res = Result<TaskUnit>.Success();
+                res.Models = tasks.ToList();
+                return res;
             }
-            return null;
+            else return Result<TaskUnit>.Failure(ModelError<Worker>.NotFound(id));
         }
 
-        public IActionResult RemoveProjectFromWorker(long workerId, long projectId)
+        public Result<Worker> RemoveProjectFromWorker(long workerId, long projectId)
         {
-            var worker_db = _workerRepository.GetWorker(workerId);
-            var project_db = _projectRepository.GetProject(projectId);
+            var worker_db = _workerRepositoryBase.GetById(workerId, true);
+            var project_db = _projectRepositoryBase.GetById(projectId, true);
 
 
             if (project_db == null)
             {
-                return new NotFoundObjectResult("Project was not found");
+                return Result<Worker>.Failure(ModelError<Project>.NotFound(projectId)); ;
             }
             if (worker_db == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<Worker>.Failure(ModelError<Worker>.NotFound(workerId));
             }
 
             worker_db.Projects.Remove(project_db);
 
 
-            if (_workerRepository.UpdateWorker(worker_db))
+            if (_workerRepositoryBase.Update(worker_db))
             {
-                return new OkObjectResult("Success! Project was removed from Worker!");
+                return Result<Worker>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<Worker>.Failure(ModelError<Worker>.ServerError);
         }
 
-        public IActionResult RemoveTaskFromWorker(long workerId, long taskId)
+        public Result<Worker> RemoveTaskFromWorker(long workerId, long taskId)
         {
-            var worker_db = _workerRepository.GetWorker(workerId);
-            var task_db = _taskUnitRepository.GetTask(taskId);
+            var worker_db = _workerRepositoryBase.GetById(workerId, true);
+            var task_db = _taskRepositoryBase.GetById(taskId, true);
 
 
             if (task_db == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<Worker>.Failure(ModelError<TaskUnit>.NotFound(taskId));
             }
             if (worker_db == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<Worker>.Failure(ModelError<Worker>.NotFound(workerId));
             }
 
             worker_db.Tasks.Remove(task_db);
 
 
-            if (_workerRepository.UpdateWorker(worker_db))
+            if (_workerRepositoryBase.Update(worker_db))
             {
-                return new OkObjectResult("Success! Task was removed from worker!");
+                return Result<Worker>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<Worker>.Failure(ModelError<Worker>.ServerError);
         }
 
-        public IActionResult UpdateWorker(long id, Worker worker)
+        public Result<Worker> UpdateWorker(long id, Worker worker)
         {
-            var worker_db = _workerRepository.GetWorker(id);
-            if (worker == null || worker_db == null)
+            var worker_db = _workerRepositoryBase.GetById(id, true);
+            if (worker == null)
             {
-                return new NotFoundObjectResult("Work was not found");
+                return Result<Worker>.Failure(ModelError<Worker>.NullReference);
+            }
+            if (worker_db == null)
+            {
+                return Result<Worker>.Failure(ModelError<Worker>.NotFound(id));
             }
             else
             {
@@ -258,10 +257,10 @@ namespace tasktracker_3.Services
                     ICollection<Project> projects = new List<Project>();
                     foreach (var project in prj)
                     {
-                        var db_project = _projectRepository.GetProject(project.Id);
+                        var db_project = _projectRepositoryBase.GetById(project.Id, true);
                         if (db_project == null)
                         {
-                            return new NotFoundObjectResult("Project was not found");
+                            return Result<Worker>.Failure(ModelError<Project>.NotFound(project.Id));
                         }
                         else
                         {
@@ -279,10 +278,10 @@ namespace tasktracker_3.Services
                     ICollection<TaskUnit> taskUnits_new = new List<TaskUnit>();
                     foreach (var taskUnit in tsks_create)
                     {
-                        var db_task = _taskUnitRepository.GetTask(taskUnit.Id);
+                        var db_task = _taskRepositoryBase.GetById(taskUnit.Id, true);
                         if (db_task == null)
                         {
-                            return new NotFoundObjectResult("Task was not found");
+                            return Result<Worker>.Failure(ModelError<TaskUnit>.NotFound(taskUnit.Id));
                         }
                         else
                         {
@@ -293,18 +292,13 @@ namespace tasktracker_3.Services
                     worker_db.Tasks = taskUnits_new;
                 }
 
-                if (_workerRepository.UpdateWorker(worker_db))
+                if (_workerRepositoryBase.Update(worker_db))
                 {
-                    return new OkObjectResult("Success! Worker was updated!");
+                    return Result<Worker>.Success();
                 }
 
-                return new BadRequestObjectResult("Something went wrong!");
+                return Result<Worker>.Failure(ModelError<Worker>.ServerError);
             }
-        }
-
-        public bool WorkerExists(long id)
-        {
-            return _workerRepository.WorkerExists(id);
         }
     }
 }

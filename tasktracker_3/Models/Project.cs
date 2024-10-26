@@ -4,9 +4,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace tasktracker_3.Models
 {
     [Table("projects")]
-    public class Project
+    public class Project : BaseModel
     {
-        public long Id { get; set; }
+        //public long Id { get; set; }
         [Required]
         [MaxLength(50, ErrorMessage = "Title cannot exceed 50 characters.")]
         public string Name { get; set; } = "";

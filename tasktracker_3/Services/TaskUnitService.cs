@@ -1,63 +1,65 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
+using tasktracker_3.Help.Result;
+using tasktracker_3.Help.Result.ModelErrors;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Interfaces.Services;
 using tasktracker_3.Models;
+using tasktracker_3.Repository.Base;
+using tasktracker_3.Services.Base;
 
 namespace tasktracker_3.Services
 {
-    public class TaskUnitService : ITaskUnitService
+    public class TaskUnitService : BaseService<TaskUnit>, ITaskUnitService
     {
-        private readonly ITaskUnitRepository _taskUnitRepository;
-        private readonly IProjectRepository _projectRepository;
-        private readonly IWorkerRepository _workerRepository;
-        public TaskUnitService(ITaskUnitRepository taskUnitRepository, IProjectRepository projectRepository, IWorkerRepository workerRepository)
-        {
-            _projectRepository = projectRepository;
-            _workerRepository = workerRepository;
-            _taskUnitRepository = taskUnitRepository;
 
-        }
+        public TaskUnitService(BaseRepository<TaskUnit> baseRepository,
+            BaseRepository<TaskUnit> taskRepositoryBase,
+            BaseRepository<Project> projectRepositoryBase,
+            BaseRepository<Worker> workerRepositoryBase,
+            ITaskUnitRepository taskUnitRepository, IProjectRepository projectRepository, IWorkerRepository workerRepository)
+        : base(baseRepository, taskRepositoryBase, projectRepositoryBase, workerRepositoryBase, taskUnitRepository, workerRepository, projectRepository) { }
 
-        public IActionResult AddChildTaskToTask(long parentTaskId, long childTaskId)
+
+        public Result<TaskUnit> AddChildTaskToTask(long parentTaskId, long childTaskId)
         {
-            var parent_task_db = _taskUnitRepository.GetTask(parentTaskId);
-            var child_task_db = _taskUnitRepository.GetTask(childTaskId);
+            var parent_task_db = _taskRepositoryBase.GetById(parentTaskId, true);
+            var child_task_db = _taskRepositoryBase.GetById(childTaskId, true);
 
 
             if (parent_task_db == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(parentTaskId));
             }
             if (child_task_db == null)
             {
-                return new NotFoundObjectResult("Child task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(childTaskId));
             }
 
 
             parent_task_db.ParentOf.Add(child_task_db);
 
 
-            if (_taskUnitRepository.UpdateTask(parent_task_db))
+            if (_taskRepositoryBase.Update(parent_task_db))
             {
-                return new OkObjectResult("Success! Child task was added to task!");
+                return Result<TaskUnit>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.ServerError);
         }
 
-        public IActionResult AddTask(TaskUnit taskUnit)
+        public Result<TaskUnit> AddTask(TaskUnit taskUnit)
         {
-            var TaskUnits = _taskUnitRepository.GetTasks().Where(t => t.Title.Trim().ToUpper() == taskUnit.Title.Trim().ToUpper()).FirstOrDefault();
-
-            if (TaskUnits != null)
-            {
-                return new UnprocessableEntityObjectResult("Task " + taskUnit.Title + " already exists");
-            }
 
             if (taskUnit == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NullReference);
+            }
+
+            var TaskUnits = _taskRepositoryBase.GetAll(false).Where(t => t.Title.Trim().ToUpper() == taskUnit.Title.Trim().ToUpper()).FirstOrDefault();
+
+            if (TaskUnits != null)
+            {
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.SameTitle(taskUnit.Title));
             }
 
             ICollection<Worker> wkr = taskUnit.Workers;
@@ -70,10 +72,10 @@ namespace tasktracker_3.Services
             {
                 foreach (var worker in wkr)
                 {
-                    var db_worker = _workerRepository.GetWorker(worker.Id);
+                    var db_worker = _workerRepositoryBase.GetById(worker.Id, true);
                     if (db_worker == null)
                     {
-                        return new NotFoundObjectResult("Worker with Id: " + worker.Id + " was not found");
+                        return Result<TaskUnit>.Failure(ModelError<Worker>.NotFound(worker.Id));
                     }
                     else
                     {
@@ -87,10 +89,10 @@ namespace tasktracker_3.Services
             {
                 foreach (var childTask in tsk)
                 {
-                    var db_child = _taskUnitRepository.GetTask(childTask.Id);
+                    var db_child = _taskRepositoryBase.GetById(childTask.Id, true);
                     if (db_child == null)
                     {
-                        return new NotFoundObjectResult("Task with Id: " + childTask.Id + " was not found");
+                        return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(childTask.Id));
                     }
                     else
                     {
@@ -108,10 +110,10 @@ namespace tasktracker_3.Services
             {
                 foreach (var parentTask in tsk2)
                 {
-                    var db_parent = _taskUnitRepository.GetTask(parentTask.Id);
+                    var db_parent = _taskRepositoryBase.GetById(parentTask.Id, true);
                     if (db_parent == null)
                     {
-                        return new NotFoundObjectResult("Task with Id: " + parentTask.Id + " was not found");
+                        return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(parentTask.Id));
                     }
                     else
                     {
@@ -123,60 +125,61 @@ namespace tasktracker_3.Services
 
             if (taskUnit.Project != null)
             {
-                if (!_projectRepository.ProjectExists(taskUnit.Project.Id))
+                var project = _projectRepositoryBase.GetById(taskUnit.Project.Id, true);
+                if (project == null)
                 {
-                    return new NotFoundObjectResult("Project with " + taskUnit.Project.Id + "was not found");
+                    return Result<TaskUnit>.Failure(ModelError<Project>.NotFound(taskUnit.Project.Id));
                 }
 
-                taskUnit.Project = _projectRepository.GetProject(taskUnit.Project.Id);
+                taskUnit.Project = project;
             }
             else
             {
-                return new BadRequestObjectResult("Project reference is required");
+                return Result<TaskUnit>.Failure(ModelError<Project>.NullReference);
             }
 
 
-            if (_taskUnitRepository.AddTask(taskUnit))
+            if (_taskRepositoryBase.AddModel(taskUnit))
             {
-                return new OkObjectResult("Success! Task added!");
+                return Result<TaskUnit>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.ServerError);
         }
 
-        public IActionResult AddWorkerToTask(long taskId, long workerId)
+        public Result<TaskUnit> AddWorkerToTask(long taskId, long workerId)
         {
-            var task_db = _taskUnitRepository.GetTask(taskId);
-            var worker_db = _workerRepository.GetWorker(workerId);
+            var task_db = _taskRepositoryBase.GetById(taskId, true);
+            var worker_db = _workerRepositoryBase.GetById(workerId, true);
 
 
             if (task_db == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(taskId));
             }
             if (worker_db == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<TaskUnit>.Failure(ModelError<Worker>.NotFound(workerId));
             }
 
             task_db.Workers.Add(worker_db);
 
 
-            if (_taskUnitRepository.UpdateTask(task_db))
+            if (_taskRepositoryBase.Update(task_db))
             {
-                return new OkObjectResult("Success! Worker added to task!");
+                return Result<TaskUnit>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.ServerError);
 
         }
 
-        public IActionResult DeleteTask(long Id)
+        public Result<TaskUnit> DeleteTask(long Id)
         {
-            var taskUnit = _taskUnitRepository.GetTask(Id);
+            var taskUnit = _taskRepositoryBase.GetById(Id, true);
             if (taskUnit == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(Id));
             }
 
             var taskWorkers = taskUnit.Workers;
@@ -208,127 +211,130 @@ namespace tasktracker_3.Services
                 taskProject.Tasks.Remove(taskUnit);
             }
 
-            if (_taskUnitRepository.DeleteTask(taskUnit))
+            if (_taskRepositoryBase.DeleteModel(taskUnit))
             {
-                return new OkObjectResult("Success! Task was deleted!");
+                return Result<TaskUnit>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.ServerError);
         }
 
-        public ICollection<TaskUnit>? GetChildrenOfTask(long id)
+        public Result<TaskUnit> GetChildrenOfTask(long id)
         {
-            if (_taskUnitRepository.TaskExists(id))
-            {
-                return _taskUnitRepository.GetChildrenOfTask(id);
+            var children = _taskUnitRepository.GetChildrenOfTask(id);
+            if (children!=null) {
+                var res = Result<TaskUnit>.Success();
+                res.Models = children.ToList();
+                return res;
             }
-            else return null;
+            else return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(id));
         }
 
-        public ICollection<TaskUnit>? GetParentsOfTask(long id)
+        public Result<TaskUnit> GetParentsOfTask(long id)
         {
-            if (_taskUnitRepository.TaskExists(id))
+            var parents = _taskUnitRepository.GetParentsOfTask(id);
+            if (parents != null)
             {
-                return _taskUnitRepository.GetParentsOfTask(id);
+                var res = Result<TaskUnit>.Success();
+                res.Models = parents.ToList();
+                return res;
             }
-            else return null;
+            else return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(id));
         }
 
-        public TaskUnit? GetTask(long id)
+        public Result<Project> GetTaskProject(long id)
         {
-            return _taskUnitRepository.GetTask(id);
-        }
-
-        public Project? GetTaskProject(long id)
-        {
-            if (_taskUnitRepository.TaskExists(id))
+            var project = _taskUnitRepository.GetTaskProject(id);
+            if (project != null)
             {
-                return _taskUnitRepository.GetTaskProject(id);
+                var res = Result<Project>.Success();
+                res.Model = project;
+                return res;
             }
-            return null;
+            else return Result<Project>.Failure(ModelError<TaskUnit>.NotFound(id));
         }
 
-        public ICollection<TaskUnit> GetTasks(string Title)
+        public Result<TaskUnit> GetTasks(string Title)
         {
-            return _taskUnitRepository.GetTasks(Title);
+            var res = Result<TaskUnit>.Success();
+            res.Models = _taskUnitRepository.GetTasks(Title).ToList();
+
+            return res;
         }
 
-        public ICollection<TaskUnit> GetTasks()
+        public Result<Worker> GetTaskWorkers(long id)
         {
-            return _taskUnitRepository.GetTasks();
-        }
-
-        public ICollection<Worker>? GetTaskWorkers(long id)
-        {
-            if (_taskUnitRepository.TaskExists(id))
+            var workers = _taskUnitRepository.GetTaskWorkers(id);
+            if (workers != null)
             {
-                return _taskUnitRepository.GetTaskWorkers(id);
+                var res = Result<Worker>.Success();
+                res.Models = workers.ToList();
+                return res;
             }
-            else return null;
+            else return Result<Worker>.Failure(ModelError<TaskUnit>.NotFound(id));
         }
 
-        public IActionResult RemoveChildTaskFromTask(long parentTaskId, long childTaskId)
+        public Result<TaskUnit> RemoveChildTaskFromTask(long parentTaskId, long childTaskId)
         {
-            var parent_task_db = _taskUnitRepository.GetTask(parentTaskId);
-            var child_task_db = _taskUnitRepository.GetTask(childTaskId);
+            var parent_task_db = _taskRepositoryBase.GetById(parentTaskId, true);
+            var child_task_db = _taskRepositoryBase.GetById(childTaskId, true);
 
 
             if (parent_task_db == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(parentTaskId));
             }
             if (child_task_db == null)
             {
-                return new NotFoundObjectResult("Child Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(childTaskId));
             }
 
             parent_task_db.ParentOf.Remove(child_task_db);
 
-            if (_taskUnitRepository.UpdateTask(parent_task_db))
+            if (_taskRepositoryBase.Update(parent_task_db))
             {
-                return new OkObjectResult("Success! Child task from task was removed!");
+                return Result<TaskUnit>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.ServerError);
         }
 
-        public IActionResult RemoveWorkerFromTask(long taskId, long workerId)
+        public Result<TaskUnit> RemoveWorkerFromTask(long taskId, long workerId)
         {
-            var task_db = _taskUnitRepository.GetTask(taskId);
-            var worker_db = _workerRepository.GetWorker(workerId);
+            var task_db = _taskRepositoryBase.GetById(taskId, true);
+            var worker_db = _workerRepositoryBase.GetById(workerId, true);
 
 
             if (task_db == null)
             {
-                return new NotFoundObjectResult("Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(taskId));
             }
             if (worker_db == null)
             {
-                return new NotFoundObjectResult("Worker was not found");
+                return Result<TaskUnit>.Failure(ModelError<Worker>.NotFound(workerId));
             }
 
             task_db.Workers.Remove(worker_db);
 
-            if (_taskUnitRepository.UpdateTask(task_db))
+            if (_taskRepositoryBase.Update(task_db))
             {
-                return new OkObjectResult("Success! Worker from task was removed!");
+                return Result<TaskUnit>.Success();
             }
 
-            return new BadRequestObjectResult("Something went wrong!");
+            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.ServerError);
 
         }
 
-        public bool TaskExists(long id)
+        public Result<TaskUnit> UpdateTask(long id, TaskUnit taskUnit)
         {
-            return _taskUnitRepository.TaskExists(id);
-        }
-
-        public IActionResult UpdateTask(long id, TaskUnit taskUnit)
-        {
-            var task_db = _taskUnitRepository.GetTask(id);
-            if (taskUnit == null || task_db == null)
+            var task_db = _taskRepositoryBase.GetById(id, true);
+            if (taskUnit == null)
             {
-                return new BadRequestObjectResult("Task was not found");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NullReference);
+            }
+            if (task_db == null)
+            {
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(id));
             }
             else
             {
@@ -340,6 +346,8 @@ namespace tasktracker_3.Services
                 task_db.CreatedDate = taskUnit.CreatedDate;
                 task_db.Status = taskUnit.Status;
                 task_db.EndDate = taskUnit.EndDate;
+                task_db.ParentOf = taskUnit.ParentOf;
+                task_db.ChildOf = taskUnit.ChildOf;
 
                 if (!taskUnit.Workers.IsNullOrEmpty())
                 {
@@ -347,10 +355,10 @@ namespace tasktracker_3.Services
                     ICollection<Worker> workers = new List<Worker>();
                     foreach (var worker in wkr)
                     {
-                        var db_worker = _workerRepository.GetWorker(worker.Id);
+                        var db_worker = _workerRepositoryBase.GetById(worker.Id, true);
                         if (db_worker == null)
                         {
-                            return new NotFoundObjectResult("Worker was not found");
+                            return Result<TaskUnit>.Failure(ModelError<Worker>.NotFound(worker.Id));
                         }
                         else
                         {
@@ -368,10 +376,10 @@ namespace tasktracker_3.Services
                 {
                     foreach (var childTask in tsk)
                     {
-                        var db_child = _taskUnitRepository.GetTask(childTask.Id);
+                        var db_child = _taskRepositoryBase.GetById(childTask.Id, true);
                         if (db_child == null)
                         {
-                            return new NotFoundObjectResult("Task with Id: " + childTask.Id + " was not found");
+                            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(childTask.Id));
                         }
                         else
                         {
@@ -390,10 +398,10 @@ namespace tasktracker_3.Services
                 {
                     foreach (var parentTask in tsk2)
                     {
-                        var db_parent = _taskUnitRepository.GetTask(parentTask.Id);
+                        var db_parent = _taskRepositoryBase.GetById(parentTask.Id, true);
                         if (db_parent == null)
                         {
-                            return new NotFoundObjectResult("Task with Id: " + parentTask.Id + " was not found");
+                            return Result<TaskUnit>.Failure(ModelError<TaskUnit>.NotFound(parentTask.Id));
                         }
                         else
                         {
@@ -407,26 +415,28 @@ namespace tasktracker_3.Services
 
                 if (taskUnit.Project != null)
                 {
-                    if (!_projectRepository.ProjectExists(taskUnit.Project.Id))
+                    var proj = _projectRepositoryBase.GetById(taskUnit.Project.Id, true);
+                    if (proj == null)
                     {
-                        return new NotFoundObjectResult("Project was not found");
+                        return Result<TaskUnit>.Failure(ModelError<Project>.NotFound(taskUnit.Project.Id));
                     }
-                    task_db.Project = _projectRepository.GetProject(taskUnit.Project.Id);
+                    task_db.Project = proj;
                 }
                 else
                 {
-                    return new BadRequestObjectResult("Project reference is required");
+                    return Result<TaskUnit>.Failure(ModelError<Project>.NullReference);
                 }
 
-                if (_taskUnitRepository.UpdateTask(task_db))
+                if (_taskRepositoryBase.Update(task_db))
                 {
-                    return new OkObjectResult("Success! Task was updated!");
+                    return Result<TaskUnit>.Success();
                 }
 
-                return new BadRequestObjectResult("Something went wrong!");
+                return Result<TaskUnit>.Failure(ModelError<TaskUnit>.ServerError);
 
             }
         }
+
 
 
     }
