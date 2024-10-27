@@ -101,7 +101,7 @@ namespace tasktracker_3.Controllers
                 return BadRequest(result.Error);
             }
 
-            return NoContent();
+            return Ok("Success!");
         }
 
         [HttpPut("{Id}")]
@@ -119,7 +119,7 @@ namespace tasktracker_3.Controllers
                 return BadRequest(result.Error);
             }
 
-            return NoContent();
+            return Ok("Success!");
         }
 
         [HttpPut("{projectId}/Workers/{workerId}")]
@@ -134,7 +134,7 @@ namespace tasktracker_3.Controllers
                 return BadRequest(result.Error);
             }
 
-            return NoContent();
+            return Ok("Success!");
         }
 
         [HttpPut("{projectId}/Tasks/{taskId}")]
@@ -149,7 +149,7 @@ namespace tasktracker_3.Controllers
                 return BadRequest(result.Error);
             }
 
-            return NoContent();
+            return Ok("Success!");
         }
 
         [HttpDelete("{projectId}/Workers/{workerId}")]
@@ -164,7 +164,7 @@ namespace tasktracker_3.Controllers
                 return BadRequest(result.Error);
             }
 
-            return NoContent();
+            return Ok("Success!");
         }
 
         [HttpDelete("{projectId}/Tasks/{taskId}")]
@@ -179,7 +179,7 @@ namespace tasktracker_3.Controllers
                 return BadRequest(result.Error);
             }
 
-            return NoContent();
+            return Ok("Success!");
         }
 
         [HttpDelete("{Id}")]
@@ -194,7 +194,7 @@ namespace tasktracker_3.Controllers
                 return BadRequest(result.Error);
             }
 
-            return NoContent();
+            return Ok("Success!");
         }
     }
 }
