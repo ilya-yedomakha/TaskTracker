@@ -15,17 +15,15 @@ namespace tasktracker_3.Controllers
         private readonly ITaskUnitService _taskUnitService;
         private readonly IWorkerService _workerService;
         private readonly IProjectService _projectService;
-        private readonly BaseService<TaskUnit> _taskUnitServiceBase;
-        private readonly IMapper _mapper;
+        private readonly BaseService<TaskUnit, TaskUnitDTO> _taskUnitServiceBase;
 
-        public TasksUnitController(BaseService<TaskUnit> taskUnitServiceBase, IProjectService projectService, IWorkerService workerService, ITaskUnitService
-            taskUnitService, IMapper mapper)
+        public TasksUnitController(BaseService<TaskUnit,TaskUnitDTO> taskUnitServiceBase, IProjectService projectService, IWorkerService workerService, ITaskUnitService
+            taskUnitService)
         {
             _taskUnitServiceBase = taskUnitServiceBase;
             _workerService = workerService;
             _taskUnitService = taskUnitService;
             _projectService = projectService;
-            _mapper = mapper;
         }
 
         // GET: api/Tasks
@@ -36,7 +34,7 @@ namespace tasktracker_3.Controllers
             var result = _taskUnitServiceBase.GetAll(false);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -49,7 +47,7 @@ namespace tasktracker_3.Controllers
             var result = _taskUnitServiceBase.GetById(id, false);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<TaskUnitDTO>(result.Model));
+                return Ok(result.ModelDTO);
             }
             else return BadRequest(result.Error);
         }
@@ -62,7 +60,7 @@ namespace tasktracker_3.Controllers
             var result = _taskUnitService.GetTaskWorkers(id);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -75,7 +73,7 @@ namespace tasktracker_3.Controllers
             var result = _taskUnitService.GetParentsOfTask(id);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -88,7 +86,7 @@ namespace tasktracker_3.Controllers
             var result = _taskUnitService.GetChildrenOfTask(id);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -101,7 +99,7 @@ namespace tasktracker_3.Controllers
 
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<ProjectDTO>(result.Model));
+                return Ok(result.ModelDTO);
             }
             else return BadRequest(result.Error);
         }
@@ -112,7 +110,7 @@ namespace tasktracker_3.Controllers
         {
             var result = _taskUnitService.GetTasks(title);
 
-            return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
+            return Ok(result.ModelDTOs);
         }
 
 
@@ -121,9 +119,8 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(400)]
         public IActionResult AddTask([FromBody] CreateTaskUnitDTO taskUnitCreate)
         {
-            var taskUnit = _mapper.Map<TaskUnit>(taskUnitCreate);
 
-            var result = _taskUnitService.AddTask(taskUnit);
+            var result = _taskUnitService.AddTask(taskUnitCreate);
             if (result.IsFailure)
             {
                 return BadRequest(result.Error);
@@ -138,9 +135,9 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateTask(long Id, [FromBody] CreateTaskUnitDTO taskUnitUpdate)
         {
-            var taskUnit = _mapper.Map<TaskUnit>(taskUnitUpdate);
+            //var taskUnit = _mapper.Map<TaskUnit>(taskUnitUpdate);
 
-            var result = _taskUnitService.UpdateTask(Id, taskUnit);
+            var result = _taskUnitService.UpdateTask(Id, taskUnitUpdate);
 
             if (result.IsFailure)
             {

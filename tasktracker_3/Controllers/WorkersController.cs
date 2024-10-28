@@ -11,19 +11,17 @@ namespace tasktracker.Controllers
     [ApiController]
     public class WorkersController : ControllerBase
     {
-        private readonly IMapper _mapper;
         private readonly IProjectService _projectService;
         private readonly IWorkerService _workerService;
-        private readonly BaseService<Worker> _workerServiceBase;
+        private readonly BaseService<Worker, WorkerDTO> _workerServiceBase;
         private readonly ITaskUnitService _taskUnitService;
 
-        public WorkersController(BaseService<Worker> workerServiceBase, IWorkerService workerService, ITaskUnitService taskService, IProjectService projectService, IMapper mapper)
+        public WorkersController(BaseService<Worker, WorkerDTO> workerServiceBase, IWorkerService workerService, ITaskUnitService taskService, IProjectService projectService)
         {
             _workerServiceBase = workerServiceBase;
             _projectService = projectService;
             _workerService = workerService;
             _taskUnitService = taskService;
-            _mapper = mapper;
         }
 
         // GET: api/Workers
@@ -34,7 +32,7 @@ namespace tasktracker.Controllers
             var result = _workerServiceBase.GetAll(false);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<WorkerDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
 
@@ -48,7 +46,7 @@ namespace tasktracker.Controllers
             var result = _workerServiceBase.GetById(id, false);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<WorkerDTO>(result.Model));
+                return Ok(result.ModelDTO);
 
             }
             else return BadRequest(result.Error);
@@ -61,7 +59,7 @@ namespace tasktracker.Controllers
             var result = _workerService.GetWorkerProjects(id);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<ProjectDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -74,7 +72,7 @@ namespace tasktracker.Controllers
             if (result.IsSuccess)
             {
 
-                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -85,9 +83,9 @@ namespace tasktracker.Controllers
         public IActionResult AddWorker([FromBody] CreateWorkerDTO workerCreate)
         {
 
-            var worker = _mapper.Map<Worker>(workerCreate);
+            //var worker = _mapper.Map<Worker>(workerCreate);
 
-            var result = _workerService.AddWorker(worker);
+            var result = _workerService.AddWorker(workerCreate);
 
             if (result.IsFailure)
             {
@@ -103,9 +101,9 @@ namespace tasktracker.Controllers
         [ProducesResponseType(404)]
         public IActionResult UpdateWorker(int Id, [FromBody] CreateWorkerDTO workerUpdate)
         {
-            var worker = _mapper.Map<Worker>(workerUpdate);
+            //var worker = _mapper.Map<Worker>(workerUpdate);
 
-            var result = _workerService.UpdateWorker(Id, worker);
+            var result = _workerService.UpdateWorker(Id, workerUpdate);
             if (result.IsFailure)
             {
                 return BadRequest(result.Error);

@@ -1,8 +1,10 @@
-﻿using tasktracker_3.Models;
+﻿using tasktracker_3.DTO;
+using tasktracker_3.Models;
 
 namespace tasktracker_3.Help.Result
 {
-    public class Result<TModel> where TModel : BaseModel
+    public class Result<TModel,TDTO> where TModel : BaseModel
+        where TDTO : BaseReadDTO
     {
         private Result(bool isSuccess, Error error)
         {
@@ -23,11 +25,13 @@ namespace tasktracker_3.Help.Result
         public Error Error { get; }
 
         public TModel? Model { get; set;  }
+        public TDTO? ModelDTO { get; set;  }
 
         public List<TModel>? Models { get; set; }
+        public List<TDTO>? ModelDTOs { get; set; }
 
-        public static Result<TModel> Success() => new(true, Error.None);
+        public static Result<TModel,TDTO> Success() => new(true, Error.None);
 
-        public static Result<TModel> Failure(Error error) => new(false, error);
+        public static Result<TModel,TDTO> Failure(Error error) => new(false, error);
     }
 }

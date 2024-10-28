@@ -14,16 +14,14 @@ namespace tasktracker_3.Controllers
         private readonly IProjectService _projectService;
         private readonly IWorkerService _workerService;
         private readonly ITaskUnitService _taskUnitService;
-        private readonly BaseService<Project> _projectServiceBase;
-        private readonly IMapper _mapper;
+        private readonly BaseService<Project, ProjectDTO> _projectServiceBase;
 
-        public ProjectsController(BaseService<Project> projectServiceBase, IWorkerService workerService, ITaskUnitService taskService, IProjectService projectService, IMapper mapper)
+        public ProjectsController(BaseService<Project, ProjectDTO> projectServiceBase, IWorkerService workerService, ITaskUnitService taskService, IProjectService projectService)
         {
             _projectServiceBase = projectServiceBase;
             _projectService = projectService;
             _workerService = workerService;
             _taskUnitService = taskService;
-            _mapper = mapper;
         }
 
         // GET: api/Projects
@@ -34,7 +32,7 @@ namespace tasktracker_3.Controllers
             var result = _projectServiceBase.GetAll(false);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<ProjectDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -47,7 +45,7 @@ namespace tasktracker_3.Controllers
             var result = _projectServiceBase.GetById(id,false);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<ProjectDTO>(result.Model));
+                return Ok(result.ModelDTO);
             }
             else return BadRequest(result.Error);
         }
@@ -59,7 +57,7 @@ namespace tasktracker_3.Controllers
             var result = _projectService.GetProjects(name);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<ProjectDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -71,7 +69,7 @@ namespace tasktracker_3.Controllers
             var result = _projectService.GetProjectWorkers(id);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<WorkerDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -83,7 +81,7 @@ namespace tasktracker_3.Controllers
             var result = _projectService.GetProjectTasks(id);
             if (result.IsSuccess)
             {
-                return Ok(_mapper.Map<List<TaskUnitDTO>>(result.Models));
+                return Ok(result.ModelDTOs);
             }
             else return BadRequest(result.Error);
         }
@@ -93,9 +91,9 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(400)]
         public IActionResult AddProject([FromBody] CreateProjectDTO projectCreate)
         {
-            var project = _mapper.Map<Project>(projectCreate);
+            //var project = _mapper.Map<Project>(projectCreate);
 
-            var result = _projectService.AddProject(project);
+            var result = _projectService.AddProject(projectCreate);
             if (result.IsFailure)
             {
                 return BadRequest(result.Error);
@@ -111,9 +109,9 @@ namespace tasktracker_3.Controllers
         public IActionResult UpdateProject(int Id, [FromBody] CreateProjectDTO ProjectUpdate)
         {
 
-            var project = _mapper.Map<Project>(ProjectUpdate);
+            //var project = _mapper.Map<Project>(ProjectUpdate);
 
-            var result = _projectService.UpdateProject(Id, project);
+            var result = _projectService.UpdateProject(Id, ProjectUpdate);
             if (result.IsFailure)
             {
                 return BadRequest(result.Error);

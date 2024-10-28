@@ -3,9 +3,8 @@ using tasktracker_3.Models.Enums;
 
 namespace tasktracker_3.DTO
 {
-    public class TaskUnitDTO
+    public class TaskUnitDTO : BaseReadDTO
     {
-        public long Id { get; set; }
         public string Title { get; set; } = "";
         public string? Description { get; set; }
         public DateTime CreatedDate { get; set; }

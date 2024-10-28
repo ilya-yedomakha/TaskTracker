@@ -1,4 +1,6 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using AutoMapper;
+using Microsoft.IdentityModel.Tokens;
+using tasktracker_3.DTO;
 using tasktracker_3.Help.Result;
 using tasktracker_3.Help.Result.ModelErrors;
 using tasktracker_3.Interfaces;
@@ -9,22 +11,23 @@ using tasktracker_3.Services.Base;
 
 namespace tasktracker_3.Services
 {
-    public class ProjectService : BaseService<Project>, IProjectService
+    public class ProjectService : BaseService<Project, ProjectDTO>, IProjectService
     {
 
-        public ProjectService(
+        public ProjectService(IMapper mapper,
             BaseRepository<Project> baseRepository,
             BaseRepository<TaskUnit> taskRepositoryBase,
             BaseRepository<Project> projectRepositoryBase,
             BaseRepository<Worker> workerRepositoryBase,
             ITaskUnitRepository taskUnitRepository, IProjectRepository projectRepository, IWorkerRepository workerRepository)
-        : base(baseRepository, taskRepositoryBase, projectRepositoryBase, workerRepositoryBase, taskUnitRepository, workerRepository, projectRepository) { }
+        : base(mapper, baseRepository, taskRepositoryBase, projectRepositoryBase, workerRepositoryBase, taskUnitRepository, workerRepository, projectRepository) { }
 
-        public Result<Project> AddProject(Project Project)
+        public Result<Project, ProjectDTO> AddProject(CreateProjectDTO ProjectDTO)
         {
+            var Project = _mapper.Map<Project>(ProjectDTO);
             if (Project == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NullReference);
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NullReference);
             }
             else
             {
@@ -32,7 +35,7 @@ namespace tasktracker_3.Services
 
                 if (ProjectName != null)
                 {
-                    return Result<Project>.Failure(ModelError<Project>.SameTitle(Project.Name));
+                    return Result<Project, ProjectDTO>.Failure(ModelError<Project>.SameTitle(Project.Name));
                 }
 
                 if (!Project.Workers.IsNullOrEmpty())
@@ -44,7 +47,7 @@ namespace tasktracker_3.Services
                         var db_worker = _workerRepositoryBase.GetById(worker.Id, true);
                         if (db_worker == null)
                         {
-                            return Result<Project>.Failure(ModelError<Worker>.NotFound(worker.Id));
+                            return Result<Project, ProjectDTO>.Failure(ModelError<Worker>.NotFound(worker.Id));
                         }
                         else
                         {
@@ -63,7 +66,7 @@ namespace tasktracker_3.Services
                         var db_task = _taskRepositoryBase.GetById(taskUnit.Id, true);
                         if (db_task == null)
                         {
-                            return Result<Project>.Failure(ModelError<TaskUnit>.NotFound(taskUnit.Id));
+                            return Result<Project, ProjectDTO>.Failure(ModelError<TaskUnit>.NotFound(taskUnit.Id));
 
                         }
                         else
@@ -75,14 +78,14 @@ namespace tasktracker_3.Services
                 }
                 if (_projectRepositoryBase.AddModel(Project))
                 {
-                    return Result<Project>.Success();
+                    return Result<Project, ProjectDTO>.Success();
                 }
 
-                return Result<Project>.Failure(ModelError<Project>.ServerError);
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.ServerError);
             }
         }
 
-        public Result<Project> AddTaskToProject(long projectId, long taskId)
+        public Result<Project, ProjectDTO> AddTaskToProject(long projectId, long taskId)
         {
             var task_db = _taskRepositoryBase.GetById(taskId, false);
             var project_db = _projectRepositoryBase.GetById(projectId, false);
@@ -90,11 +93,11 @@ namespace tasktracker_3.Services
 
             if (task_db == null)
             {
-                return Result<Project>.Failure(ModelError<TaskUnit>.NotFound(taskId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<TaskUnit>.NotFound(taskId));
             }
             if (project_db == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NotFound(projectId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NotFound(projectId));
             }
 
             project_db.Tasks.Add(task_db);
@@ -102,24 +105,24 @@ namespace tasktracker_3.Services
 
             if (_projectRepositoryBase.Update(project_db))
             {
-                return Result<Project>.Success();
+                return Result<Project, ProjectDTO>.Success();
             }
 
-            return Result<Project>.Failure(ModelError<Project>.ServerError);
+            return Result<Project, ProjectDTO>.Failure(ModelError<Project>.ServerError);
         }
 
-        public Result<Project> AddWorkerToProject(long projectId, long workerId)
+        public Result<Project, ProjectDTO> AddWorkerToProject(long projectId, long workerId)
         {
             var project_db = _projectRepositoryBase.GetById(projectId, true);
             var worker_db = _workerRepositoryBase.GetById(workerId, true);
 
             if (worker_db == null)
             {
-                return Result<Project>.Failure(ModelError<Worker>.NotFound(workerId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Worker>.NotFound(workerId));
             }
             if (project_db == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NotFound(projectId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NotFound(projectId));
             }
 
             project_db.Workers.Add(worker_db);
@@ -127,18 +130,18 @@ namespace tasktracker_3.Services
 
             if (_projectRepositoryBase.Update(project_db))
             {
-                return Result<Project>.Success();
+                return Result<Project, ProjectDTO>.Success();
             }
 
-            return Result<Project>.Failure(ModelError<Project>.ServerError);
+            return Result<Project, ProjectDTO>.Failure(ModelError<Project>.ServerError);
         }
 
-        public Result<Project> DeleteProject(long id)
+        public Result<Project, ProjectDTO> DeleteProject(long id)
         {
             var Project = _projectRepositoryBase.GetById(id, true);
             if (Project == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NotFound(id));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NotFound(id));
             }
 
             var projectWorkers = Project.Workers;
@@ -151,47 +154,50 @@ namespace tasktracker_3.Services
             //Cascade deleting tasks
             if (_projectRepositoryBase.DeleteModel(Project))
             {
-                return Result<Project>.Success();
+                return Result<Project, ProjectDTO>.Success();
             }
 
-            return Result<Project>.Failure(ModelError<Project>.ServerError);
+            return Result<Project, ProjectDTO>.Failure(ModelError<Project>.ServerError);
         }
 
 
-        public Result<Project> GetProjects(string Name)
+        public Result<Project, ProjectDTO> GetProjects(string Name)
         {
             var projects = _projectRepository.GetProjects(Name);
-            var res = Result<Project>.Success();
+            var res = Result<Project, ProjectDTO>.Success();
             res.Models = projects.ToList();
+            res.ModelDTOs = _mapper.Map<List<ProjectDTO>>(projects.ToList());
             return res;
         }
 
-        public Result<TaskUnit> GetProjectTasks(long id)
+        public Result<TaskUnit, TaskUnitDTO> GetProjectTasks(long id)
         {
             var tasks = _projectRepository.GetProjectTasks(id);
             if (tasks != null)
             {
-                var res = Result<TaskUnit>.Success();
+                var res = Result<TaskUnit, TaskUnitDTO>.Success();
                 res.Models = tasks.ToList();
+                res.ModelDTOs = _mapper.Map<List<TaskUnitDTO>>(tasks.ToList());
                 return res;
             }
-            else return Result<TaskUnit>.Failure(ModelError<Project>.NotFound(id));
+            else return Result<TaskUnit, TaskUnitDTO>.Failure(ModelError<Project>.NotFound(id));
         }
 
-        public Result<Worker> GetProjectWorkers(long id)
+        public Result<Worker, WorkerDTO> GetProjectWorkers(long id)
         {
             var workers = _projectRepository.GetProjectWorkers(id);
             if (workers != null)
             {
-                var res = Result<Worker>.Success();
+                var res = Result<Worker, WorkerDTO>.Success();
                 res.Models = workers.ToList();
+                res.ModelDTOs = _mapper.Map<List<WorkerDTO>>(workers.ToList());
                 return res;
             }
-            else return Result<Worker>.Failure(ModelError<Project>.NotFound(id));
+            else return Result<Worker, WorkerDTO>.Failure(ModelError<Project>.NotFound(id));
         }
 
 
-        public Result<Project> RemoveTaskFromProject(long projectId, long taskId)
+        public Result<Project, ProjectDTO> RemoveTaskFromProject(long projectId, long taskId)
         {
             var project_db = _projectRepositoryBase.GetById(projectId, true);
             var task_db = _taskRepositoryBase.GetById(taskId, true);
@@ -199,11 +205,11 @@ namespace tasktracker_3.Services
 
             if (task_db == null)
             {
-                return Result<Project>.Failure(ModelError<TaskUnit>.NotFound(taskId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<TaskUnit>.NotFound(taskId));
             }
             if (project_db == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NotFound(projectId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NotFound(projectId));
             }
 
             project_db.Tasks.Remove(task_db);
@@ -211,13 +217,13 @@ namespace tasktracker_3.Services
 
             if (_projectRepositoryBase.Update(project_db))
             {
-                return Result<Project>.Success();
+                return Result<Project, ProjectDTO>.Success();
             }
 
-            return Result<Project>.Failure(ModelError<Project>.ServerError);
+            return Result<Project, ProjectDTO>.Failure(ModelError<Project>.ServerError);
         }
 
-        public Result<Project> RemoveWorkerFromProject(long projectId, long workerId)
+        public Result<Project, ProjectDTO> RemoveWorkerFromProject(long projectId, long workerId)
         {
             var project_db = _projectRepositoryBase.GetById(projectId, true);
             var worker_db = _workerRepositoryBase.GetById(workerId, true);
@@ -225,11 +231,11 @@ namespace tasktracker_3.Services
 
             if (worker_db == null)
             {
-                return Result<Project>.Failure(ModelError<Worker>.NotFound(workerId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Worker>.NotFound(workerId));
             }
             if (project_db == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NotFound(projectId));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NotFound(projectId));
             }
 
             project_db.Workers.Remove(worker_db);
@@ -237,23 +243,24 @@ namespace tasktracker_3.Services
 
             if (_projectRepositoryBase.Update(project_db))
             {
-                return Result<Project>.Success();
+                return Result<Project, ProjectDTO>.Success();
             }
 
-            return Result<Project>.Failure(ModelError<Project>.ServerError);
+            return Result<Project, ProjectDTO>.Failure(ModelError<Project>.ServerError);
         }
 
-        public Result<Project> UpdateProject(long id, Project project)
+        public Result<Project, ProjectDTO> UpdateProject(long id, CreateProjectDTO projectDTO)
         {
+            var project = _mapper.Map<Project>(projectDTO);
             var project_db = _projectRepositoryBase.GetById(id, true);
 
             if (project == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NullReference);
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NullReference);
             }
             if (project_db == null)
             {
-                return Result<Project>.Failure(ModelError<Project>.NotFound(id));
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.NotFound(id));
             }
             else
             {
@@ -270,7 +277,7 @@ namespace tasktracker_3.Services
                         var db_worker = _workerRepositoryBase.GetById(worker.Id, true);
                         if (db_worker == null)
                         {
-                            return Result<Project>.Failure(ModelError<Worker>.NotFound(worker.Id));
+                            return Result<Project, ProjectDTO>.Failure(ModelError<Worker>.NotFound(worker.Id));
                         }
                         else
                         {
@@ -291,7 +298,7 @@ namespace tasktracker_3.Services
                         var db_task = _taskRepositoryBase.GetById(taskUnit.Id, false);
                         if (db_task == null)
                         {
-                            return Result<Project>.Failure(ModelError<TaskUnit>.NotFound(taskUnit.Id));
+                            return Result<Project, ProjectDTO>.Failure(ModelError<TaskUnit>.NotFound(taskUnit.Id));
                         }
                         else
                         {
@@ -304,10 +311,10 @@ namespace tasktracker_3.Services
 
                 if (_projectRepositoryBase.Update(project_db))
                 {
-                    return Result<Project>.Success();
+                    return Result<Project, ProjectDTO>.Success();
                 }
 
-                return Result<Project>.Failure(ModelError<Project>.ServerError);
+                return Result<Project, ProjectDTO>.Failure(ModelError<Project>.ServerError);
             }
         }
     }

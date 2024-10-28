@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using tasktracker_3.Data;
+using tasktracker_3.DTO;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Interfaces.Services;
+using tasktracker_3.Models;
 using tasktracker_3.Repository;
 using tasktracker_3.Repository.Base;
 using tasktracker_3.Services;
@@ -19,7 +21,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IWorkerRepository, WorkerRepository>();
 builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped(typeof(BaseRepository<>));
-builder.Services.AddScoped(typeof(BaseService<>));
+builder.Services.AddScoped(typeof(BaseService<,>)); // ??
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<DataContext>(b => b.UseSqlServer(connectionString));
