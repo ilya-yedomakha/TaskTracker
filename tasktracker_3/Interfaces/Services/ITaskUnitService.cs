@@ -12,7 +12,9 @@ namespace tasktracker_3.Interfaces.Services
         Result<TaskUnit, TaskUnitDTO> AddWorkerToTask(long taskId, long workerId);
         Result<TaskUnit, TaskUnitDTO> AddChildTaskToTask(long parentTaskId, long childTaskId);
         Result<TaskUnit, TaskUnitDTO> RemoveChildTaskFromTask(long parentTaskId, long childTaskId);
-
+        Result<TaskUnit, TaskUnitDTO> GetTaskUnitById(long id, bool includes);
+        Result<TaskUnit, TaskUnitDTO> GetAllTasks(bool includes);
+        bool TaskExists(long id);
         Result<TaskUnit, TaskUnitDTO> GetChildrenOfTask(long id);
         Result<TaskUnit, TaskUnitDTO> GetParentsOfTask(long id);
         Result<TaskUnit, TaskUnitDTO> RemoveWorkerFromTask(long taskId, long workerId);

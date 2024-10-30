@@ -18,7 +18,14 @@ namespace tasktracker_3.Services
             BaseRepository<Project> projectRepositoryBase,
             BaseRepository<Worker> workerRepositoryBase,
             ITaskUnitRepository taskUnitRepository, IProjectRepository projectRepository, IWorkerRepository workerRepository)
-        : base(mapper, baseRepository, taskRepositoryBase, projectRepositoryBase, workerRepositoryBase, taskUnitRepository, workerRepository, projectRepository) { }
+        : base(mapper,
+               baseRepository,
+               taskRepositoryBase,
+               projectRepositoryBase,
+               workerRepositoryBase,
+               taskUnitRepository,
+               workerRepository,
+               projectRepository) { }
 
 
         public Result<Worker, WorkerDTO> AddProjectToWorker(long workerId, long projectId)
@@ -182,6 +189,21 @@ namespace tasktracker_3.Services
                 return res;
             }
             else return Result<TaskUnit, TaskUnitDTO>.Failure(ModelError<Worker>.NotFound(id));
+        }
+
+        public Result<Worker, WorkerDTO> GetWorkerById(long id, bool includes)
+        {
+            return GetById(id, includes);
+        }
+
+        public Result<Worker, WorkerDTO> GetAllWorkers(bool includes)
+        {
+            return GetAll(includes);
+        }
+
+        public bool WorkerExists(long id)
+        {
+            return ModelExists(id);
         }
 
         public Result<Worker, WorkerDTO> RemoveProjectFromWorker(long workerId, long projectId)

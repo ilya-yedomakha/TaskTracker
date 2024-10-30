@@ -9,7 +9,9 @@ namespace tasktracker_3.Interfaces.Services
         Result<Worker, WorkerDTO> AddWorker(CreateWorkerDTO workerDTO);
         Result<Worker, WorkerDTO> UpdateWorker(long id, CreateWorkerDTO workerDTO);
         Result<Worker, WorkerDTO> DeleteWorker(long id);
-
+        Result<Worker, WorkerDTO> GetWorkerById(long id, bool includes);
+        Result<Worker, WorkerDTO> GetAllWorkers(bool includes);
+        bool WorkerExists(long id);
         Result<Worker, WorkerDTO> AddProjectToWorker(long workerId, long projectId);
         Result<Worker, WorkerDTO> RemoveProjectFromWorker(long workerId, long projectId);
 

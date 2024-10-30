@@ -15,12 +15,12 @@ namespace tasktracker_3.Controllers
         private readonly ITaskUnitService _taskUnitService;
         private readonly IWorkerService _workerService;
         private readonly IProjectService _projectService;
-        private readonly BaseService<TaskUnit, TaskUnitDTO> _taskUnitServiceBase;
 
-        public TasksUnitController(BaseService<TaskUnit,TaskUnitDTO> taskUnitServiceBase, IProjectService projectService, IWorkerService workerService, ITaskUnitService
-            taskUnitService)
+        public TasksUnitController(
+            IProjectService projectService,
+            IWorkerService workerService,
+            ITaskUnitService taskUnitService)
         {
-            _taskUnitServiceBase = taskUnitServiceBase;
             _workerService = workerService;
             _taskUnitService = taskUnitService;
             _projectService = projectService;
@@ -31,7 +31,7 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(typeof(IEnumerable<TaskUnit>), 200)]
         public IActionResult GetAllTasks()
         {
-            var result = _taskUnitServiceBase.GetAll(false);
+            var result = _taskUnitService.GetAllTasks(false);
             if (result.IsSuccess)
             {
                 return Ok(result.ModelDTOs);
@@ -44,7 +44,7 @@ namespace tasktracker_3.Controllers
         [ProducesResponseType(typeof(TaskUnit), 200)]
         public IActionResult GetTaskById(long id)
         {
-            var result = _taskUnitServiceBase.GetById(id, false);
+            var result = _taskUnitService.GetTaskUnitById(id, false);
             if (result.IsSuccess)
             {
                 return Ok(result.ModelDTO);

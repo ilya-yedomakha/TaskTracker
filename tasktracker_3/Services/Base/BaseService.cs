@@ -20,7 +20,15 @@ namespace tasktracker_3.Services.Base
         protected readonly BaseRepository<Worker> _workerRepositoryBase;
         protected readonly BaseRepository<Project> _projectRepositoryBase;
         protected readonly BaseRepository<T> _baseRepository;
-        public BaseService(IMapper mapper, BaseRepository<T> baseRepository, BaseRepository<TaskUnit> taskRepositoryBase, BaseRepository<Project> projectRepositoryBase, BaseRepository<Worker> workerRepositoryBase, ITaskUnitRepository taskUnitRepository, IWorkerRepository workerRepository, IProjectRepository projectRepository)
+        public BaseService(
+            IMapper mapper,
+            BaseRepository<T> baseRepository,
+            BaseRepository<TaskUnit> taskRepositoryBase,
+            BaseRepository<Project> projectRepositoryBase,
+            BaseRepository<Worker> workerRepositoryBase,
+            ITaskUnitRepository taskUnitRepository,
+            IWorkerRepository workerRepository,
+            IProjectRepository projectRepository)
         {
             _mapper = mapper;
             _projectRepositoryBase = projectRepositoryBase;

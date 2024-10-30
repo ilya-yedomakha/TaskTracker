@@ -19,7 +19,14 @@ namespace tasktracker_3.Services
             BaseRepository<Project> projectRepositoryBase,
             BaseRepository<Worker> workerRepositoryBase,
             ITaskUnitRepository taskUnitRepository, IProjectRepository projectRepository, IWorkerRepository workerRepository)
-        : base(mapper, baseRepository, taskRepositoryBase, projectRepositoryBase, workerRepositoryBase, taskUnitRepository, workerRepository, projectRepository) { }
+        : base(mapper,
+               baseRepository,
+               taskRepositoryBase,
+               projectRepositoryBase,
+               workerRepositoryBase,
+               taskUnitRepository,
+               workerRepository,
+               projectRepository) { }
 
 
         public Result<TaskUnit, TaskUnitDTO> AddChildTaskToTask(long parentTaskId, long childTaskId)
@@ -269,6 +276,21 @@ namespace tasktracker_3.Services
             res.ModelDTOs = _mapper.Map<List<TaskUnitDTO>>(taskUnits);
 
             return res;
+        }
+
+        public Result<TaskUnit, TaskUnitDTO> GetTaskUnitById(long id, bool includes)
+        {
+            return GetById(id, includes);
+        }
+
+        public Result<TaskUnit, TaskUnitDTO> GetAllTasks(bool includes)
+        {
+            return GetAll(includes);
+        }
+
+        public bool TaskExists(long id)
+        {
+            return ModelExists(id);
         }
 
         public Result<Worker, WorkerDTO> GetTaskWorkers(long id)
