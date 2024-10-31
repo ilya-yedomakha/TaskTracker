@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using tasktracker_3.Data;
-using tasktracker_3.DTO;
 using tasktracker_3.Interfaces;
 using tasktracker_3.Interfaces.Services;
-using tasktracker_3.Models;
 using tasktracker_3.Repository;
 using tasktracker_3.Repository.Base;
 using tasktracker_3.Services;
