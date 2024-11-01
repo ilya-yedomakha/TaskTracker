@@ -11,17 +11,11 @@ namespace tasktracker_3.Controllers
     {
         //private readonly DataContext _context;
         private readonly ITaskUnitService _taskUnitService;
-        private readonly IWorkerService _workerService;
-        private readonly IProjectService _projectService;
 
         public TasksUnitController(
-            IProjectService projectService,
-            IWorkerService workerService,
             ITaskUnitService taskUnitService)
         {
-            _workerService = workerService;
             _taskUnitService = taskUnitService;
-            _projectService = projectService;
         }
 
         // GET: api/Tasks

@@ -10,16 +10,10 @@ namespace tasktracker_3.Controllers
     public class ProjectsController : ControllerBase
     {
         private readonly IProjectService _projectService;
-        private readonly IWorkerService _workerService;
-        private readonly ITaskUnitService _taskUnitService;
 
-        public ProjectsController(IWorkerService workerService,
-                                  ITaskUnitService taskService,
-                                  IProjectService projectService)
+        public ProjectsController(IProjectService projectService)
         {
             _projectService = projectService;
-            _workerService = workerService;
-            _taskUnitService = taskService;
         }
 
         // GET: api/Projects
